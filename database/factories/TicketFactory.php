@@ -17,7 +17,9 @@ class TicketFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Vé vào cổng',
+            'price' => 100000,
+            'remain' => 1000,
         ];
     }
 }

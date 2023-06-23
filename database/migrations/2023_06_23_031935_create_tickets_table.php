@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name',255);
             $table->decimal('price',10,2);
-            $table->string('ticket_type');
+            // $table->string('ticket_type');
             $table->unsignedInteger('remain');
-            $table->unsignedInteger('min_quantity');
+            // $table->unsignedInteger('min_quantity');
             $table->timestamps();
         });
     }
