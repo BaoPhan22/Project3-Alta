@@ -1,10 +1,14 @@
 @extends('layouts.master')
 @section('title', 'Trang chủ')
 @section('content')
-    <form action="{{ route('beforepay') }}" method="get">
-        <select name="pack" id="pack" class="form-control mb-3">
-            <option value="1"> Gói gia  đình </option>
-            <option value="2"> Gói cá nhân </option>
+<div class="container">
+    <form action="{{route('beforepay')}}" method="post">
+        @csrf
+        <select name="ticket" id="ticket" class="form-control mb-3">
+            @foreach ($tickets as $item)
+            <option value="{{$item->id}}"> {{$item->name}} </option>
+                
+            @endforeach
         </select>
         <input class="form-control mb-3" placeholder="Số lượng vé" type="number" name="quantity" id="quantity">
         <input class="form-control mb-3" placeholder="Ngày đặt vé" type="date" name="date_order" id="date_order">
@@ -13,4 +17,5 @@
         <input class="form-control mb-3" placeholder="Email" type="email" name="email" id="email">
         <button class="btn btn-primary" type="submit">Đặt vé</button>
     </form>
+</div>
 @endsection
