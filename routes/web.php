@@ -15,9 +15,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::controller(TicketController::class)->group(function () {
-    Route::get('/', 'index');
+    Route::get('/', 'index')->name('index');
     Route::get('/success', 'success')->name('checkout.success');
     Route::get('/cancel', 'cancel')->name('checkout.cancel');
     Route::post('/beforepay', 'beforepay')->name('beforepay');
     Route::post('/checkout', 'checkout')->name('checkout');
+    Route::post('/webhook', 'webhook')->name('webhook');
 });
