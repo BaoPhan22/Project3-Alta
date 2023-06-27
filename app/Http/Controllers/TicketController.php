@@ -21,12 +21,20 @@ class TicketController extends Controller
 
     public function beforepay(Request $request)
     {
-        $date = $request->date_order;
-        $selectedDate = Carbon::createFromFormat('Y-m-d', $date);
-        $today = Carbon::today();
-        if ($request->quantity == '' || $request->quantity <= 0 || $selectedDate->lessThan($today)) {
-            return redirect()->route('index');
-        }
+        $validator = $request->validate([
+            "quantity" => 'bail|required|integer|min:1',
+            "date_order" => 'required|date|date_format:Y-m-d|after_or_equal:' . date('Y-m-d'),
+            "phone" => ['required','regex:/(0[3|5|7|8|9])+([0-9]{8})/','size:10']
+        ], [
+            'quantity.min' => 'Số lượng vé phải lớn hơn 1',
+            'date_order.after_or_equal' => 'Ngày đặt phải từ hôm nay trở đi',
+            'phone.regex' => 'Số điện thoại không đúng định dạng',
+            'phone.size' => 'Số điện thoại phải có 10 số'
+        ]);
+
+        // if($validator->fails()) {
+        //     return Redirect::back()->withErrors($validator);
+        // }
 
 
         $checkUser = User::select('id')->where('phone', $request->phone)->get();
@@ -105,7 +113,7 @@ class TicketController extends Controller
                 $order->save();
                 //TODO  send mail
             }
-            
+
             return view('checkout-success');
         } catch (Exception $e) {
             throw new NotFoundHttpException();
