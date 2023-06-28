@@ -9,9 +9,20 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ThankYouMail;
 
 class TicketController extends Controller
 {
+    public function mail(Request $request)
+    {
+        $order = Order::where('session_id', $request->session_id)->first();
+        $user = User::find($order->id_users);
+        // echo $user->name;
+        // echo $user->email;
+        Mail::to($user->email)->send(new ThankYouMail($user->name));
+    }
+
     public function index()
     {
         $tickets = Ticket::all();

@@ -20,5 +20,6 @@ Route::controller(TicketController::class)->group(function () {
     Route::get('/cancel', 'cancel')->name('checkout.cancel');
     Route::post('/beforepay', 'beforepay')->name('beforepay');
     Route::post('/checkout', 'checkout')->name('checkout');
+    Route::post('/mail', 'mail')->name('mail');
     Route::post('/webhook', 'webhook')->name('webhook');
 });
