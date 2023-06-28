@@ -5,12 +5,13 @@
         <form action="{{ route('checkout') }}" method="post">
             @csrf
             <input type="hidden" name="id_user" value="{{ $data['id_user'] }}">
+            <input type="hidden" name="id_ticket" value="{{ $data['ticket']->id }}">
             <div class="row">
                 <div class="col-8">
                     <div class="mb-3">
                         <label for="price" class="form-label">Loại vé</label>
                         <input readonly type="text" class="form-control" name="ticket" id="ticket"
-                            value="{{ $data['ticket'] }}">
+                            value="{{ $data['ticket']->name }}">
                     </div>
                     <div class="mb-3">
                         <label for="total_price" class="form-label">Số tiền thanh toán</label>
