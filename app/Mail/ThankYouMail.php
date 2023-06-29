@@ -17,8 +17,10 @@ class ThankYouMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(private $name)
+    public function __construct(private $name, private $email, private $price, private $date_order, private $quantity, private $ticket_name, private $string_to_qr)
     {
+        $this->price = number_format($this->price, 0, ',', '.');
+        $this->date_order = date('d/m/Y', strtotime($this->date_order));
     }
 
     /**
@@ -27,7 +29,7 @@ class ThankYouMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address(env('MAIL_FROM_ADDRESS'),env('MAIL_FROM_NAME')),
+            from: new Address(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME')),
             subject: 'Bạn đã đặt vé thành công',
         );
     }
@@ -39,7 +41,7 @@ class ThankYouMail extends Mailable
     {
         return new Content(
             view: 'email.content',
-            with: ['name' => $this->name],
+            with: ['name' => $this->name, 'email' => $this->email, 'price' => $this->price, 'date_order' => $this->date_order, 'quantity' => $this->quantity, 'ticket_name' => $this->ticket_name, 'string_to_qr' => $this->string_to_qr],
         );
     }
 

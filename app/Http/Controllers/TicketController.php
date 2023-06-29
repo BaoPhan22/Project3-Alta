@@ -18,9 +18,18 @@ class TicketController extends Controller
     {
         $order = Order::where('session_id', $request->session_id)->first();
         $user = User::find($order->id_users);
+        $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+        $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
+
         // echo $user->name;
         // echo $user->email;
-        Mail::to($user->email)->send(new ThankYouMail($user->name));
+        // echo $order->price;
+        // echo $order->date_order;
+        // echo $orderDetail->quantity;
+        // echo $ticket_name;
+        Mail::to($user->email)->send(new ThankYouMail($user->name, $user->email, $order->total_price, $order->date_order, $orderDetail->quantity, $ticket_name, $request->string_to_qr));
+
+        return redirect()->route('index');
     }
 
     public function index()
