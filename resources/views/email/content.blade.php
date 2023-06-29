@@ -17,5 +17,6 @@ Hệ thống vừa ghi nhận bạn thanh toán số tiền <strong><em>{{ $pric
         </div>
     </div>
 @endfor
+<br><br>
 
 Chúng tôi chân thành cám ơn bạn đã sử dụng dịch vụ

@@ -14,11 +14,12 @@
                 </div>
             </div>
         @endfor
-        <form action="{{ route('mail') }}" method="post">
+        <form action="{{ route('save') }}" method="post">
             @csrf
             <input type="hidden" name="session_id" value="{{ $_GET['session_id'] }}">
             <input type="hidden" name="string_to_qr" value="{{ $data['string_to_qr'] }}">
-            <button class="btn btn-outline-primary" type="submit">Gửi mail</button>
+            <button class="btn btn-outline-primary" name="mail" type="submit">Gửi mail</button>
+            <button class="btn btn-outline-primary" name="save" type="submit">Tải vé</button>
         </form>
         <p>Số lượng vé: {{ $data['quantity'] }}</p>
 

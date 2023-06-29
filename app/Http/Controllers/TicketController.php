@@ -14,20 +14,24 @@ use App\Mail\ThankYouMail;
 
 class TicketController extends Controller
 {
-    public function mail(Request $request)
+    public function save(Request $request)
     {
-        $order = Order::where('session_id', $request->session_id)->first();
-        $user = User::find($order->id_users);
-        $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-        $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
+        //* button mail clicked
+        if (isset($_POST['mail'])) {
+            $order = Order::where('session_id', $request->session_id)->first();
+            $user = User::find($order->id_users);
+            $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+            $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
 
-        // echo $user->name;
-        // echo $user->email;
-        // echo $order->price;
-        // echo $order->date_order;
-        // echo $orderDetail->quantity;
-        // echo $ticket_name;
-        Mail::to($user->email)->send(new ThankYouMail($user->name, $user->email, $order->total_price, $order->date_order, $orderDetail->quantity, $ticket_name, $request->string_to_qr));
+            Mail::to($user->email)->send(new ThankYouMail($user->name, $user->email, $order->total_price, $order->date_order, $orderDetail->quantity, $ticket_name, $request->string_to_qr));
+        }
+        //* button mail clicked
+
+        //* button save clicked
+        if (isset($_POST['save'])) {
+            echo 'Tải file';
+        }
+        //* button save clicked
 
         return redirect()->route('index');
     }
