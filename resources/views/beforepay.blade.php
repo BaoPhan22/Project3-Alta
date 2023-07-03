@@ -1,6 +1,15 @@
 @extends('layouts.master')
 @section('title', 'Thanh toán')
 @section('content')
+    <style>
+        #bfp-context {
+            width: 12%;
+            position: absolute;
+            bottom: 60px;
+            z-index: 1000;
+            left: 0;
+        }
+    </style>
     <p class="page-title tilte-custom">Thanh toán</p>
     <img src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688357579/Trini_Arnold_Votay1_2_nu5go9.svg"
         id="bfp-context">

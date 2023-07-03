@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Events;
 use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -45,6 +46,8 @@ class TicketController extends Controller
         $tickets = Ticket::all();
         return view('index', compact('tickets'));
     }
+
+
 
     public function beforepay(Request $request)
     {
