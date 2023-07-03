@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    position: relative;
+    font-family: "Montserrat";
+    font-size: 18px;
+    width: 100%;
+    max-width: 1920px;
+    z-index: 1000;
+    height: 100%;
+    background-image: linear-gradient(
+        175deg,
+        rgba(255, 219, 126, 1) 0%,
+        rgba(255, 122, 0, 1) 100%
+    );
+}
+
+.main-content {
+    width: 100%;
+    height: 100%;
+    background-image: url("../layout-img/bg.svg");
+    background-position-x: center;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    z-index: -1000;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.bfp-p {
+    padding-top: 40px !important;
+}
+
+#damsen-logo {
+    position: absolute;
+    top: 120px;
+    left: 190px;
+    width: 9%;
+}
+
+.tilte-custom {
+    position: absolute;
+    font-family: "iCiel Koni";
+    font-weight: 900;
+    font-size: 50px;
+    text-transform: uppercase;
+    color: #fff;
+    letter-spacing: 0em;
+    line-height: 1.2;
+}
+
+.page-title {
+    top: 18%;
+    right: 50%;
+    transform: translateX(50%);
+}
+
+#damsen-name {
+    top: 120px;
+    left: 340px;
+}
+
+.infomation-form-container {
+    width: 75%;
+    position: absolute;
+    top: 270px;
+    left: 201px;
+}
+
+.infomation-form-container1 {
+    top: 240px;
+}
+
+.form-item,
+.infomation-item {
+    background-color: #fde8b3;
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 10px #ffca7b;
+}
+
+#index-form,
+#index-content {
+    background-color: #fff6d4;
+    border-radius: 10px;
+    border: 3px dashed #ffb489;
+    min-height: 400px;
+    padding: 10px;
+}
+
+#index-form {
+    padding-top: 40px;
+    position: relative;
+}
+
+.form-caption-container {
+    position: absolute;
+    background: linear-gradient(
+        175deg,
+        rgba(255, 0, 10, 1) 0%,
+        rgba(194, 0, 11, 1) 100%
+    );
+    border-radius: 5% 5% 30% 30% / 4% 4% 44% 44%;
+    padding: 8px;
+    top: -30px;
+    transform: translateX(-50%);
+}
+
+.form-caption-container-index {
+    width: 70%;
+    left: 50%;
+}
+
+.form-caption-container1 {
+    width: 30%;
+    left: 30%;
+}
+
+.form-caption-container2 {
+    width: 90%;
+    left: 50%;
+}
+
+.form-caption {
+    border-radius: 5% 5% 30% 30% / 4% 4% 44% 44%;
+    border: 2px white dashed;
+    font-family: "iCiel Koni";
+    font-size: 22px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+#index-content {
+    padding: 15px 30px;
+}
+
+ul {
+    list-style-type: "⭐";
+    margin-left: 30px;
+}
+li {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+#context1 {
+    width: 15%;
+    position: absolute;
+    bottom: 18px;
+    z-index: 1000;
+    left: 10px;
+}
+
+#context2 {
+    position: absolute;
+    top: 200px;
+    z-index: 1000;
+    left: 10px;
+}
+
+#context3 {
+    position: absolute;
+    bottom: 0px;
+    z-index: -1000;
+    left: 50%;
+}
+
+#context4 {
+    position: absolute;
+    top: 100px;
+    z-index: -1000;
+    left: 38%;
+}
+
+#context5 {
+    position: absolute;
+    top: 80px;
+    z-index: -1000;
+    left: 50%;
+}
+
+#context6 {
+    width: 40%;
+    position: absolute;
+    top: 10px;
+    z-index: -1000;
+    right: 6%;
+}
+
+#context7 {
+    width: 8%;
+    position: absolute;
+    top: 40%;
+    z-index: -1000;
+    right: 0;
+}
+
+#context8 {
+    width: 8%;
+    position: absolute;
+    bottom: 10px;
+    z-index: -1000;
+    right: 6%;
+}
+
+#bfp-context {
+    width: 12%;
+    position: absolute;
+    bottom: 60px;
+    z-index: 1000;
+    left: 50px;
+}
+
+.btn {
+    width: 75% !important;
+    font-family: "iCiel Koni";
+    font-weight: 900;
+    font-size: 20px;
+}
+.btn-primary {
+    background-color: #ff000a;
+    border: none;
+    box-shadow: 0 6px rgb(123, 25, 25);
+}
+
+.btn-primary:hover {
+    background-color: #dd262c;
+}
+
+.fs-6 {
+    font-size: 12px !important;
+}
+
+.active {
+    border: 1px solid white;
+    padding: 10px;
+    border-radius: 30px;
+}
+
+.link-custom:hover {
+    color: rgb(255, 244, 225);
+}

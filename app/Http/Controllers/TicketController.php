@@ -11,29 +11,33 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ThankYouMail;
+use PDF;
 
 class TicketController extends Controller
 {
     public function save(Request $request)
     {
+        $order = Order::where('session_id', $request->session_id)->first();
+        $user = User::find($order->id_users);
+        $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+        $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
         //* button mail clicked
         if (isset($_POST['mail'])) {
-            $order = Order::where('session_id', $request->session_id)->first();
-            $user = User::find($order->id_users);
-            $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-            $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
-
             Mail::to($user->email)->send(new ThankYouMail($user->name, $user->email, $order->total_price, $order->date_order, $orderDetail->quantity, $ticket_name, $request->string_to_qr));
+            return redirect()->route('index');
         }
         //* button mail clicked
 
         //* button save clicked
         if (isset($_POST['save'])) {
-            echo 'Tải file';
+            $data = [
+                'name' => $user->name, 'email' => $user->email, 'price' => number_format($order->total_price, 0, ',', '.'), 'date_order' => date('d/m/Y', strtotime($order->date_order)), 'quantity' => $orderDetail->quantity, 'ticket_name' => $ticket_name, 'string_to_qr' => $request->string_to_qr
+            ];
+            $pdf = PDF::loadView('download-file.invoice', $data);
+            return $pdf->download('invoice' . $request->string_to_qr . '.pdf');
         }
         //* button save clicked
 
-        return redirect()->route('index');
     }
 
     public function index()
@@ -54,8 +58,8 @@ class TicketController extends Controller
             "date_order" => 'required|date|date_format:Y-m-d|after_or_equal:' . date('Y-m-d'),
             "phone" => ['required', 'regex:/(0[3|5|7|8|9])+([0-9]{8})/', 'size:10']
         ], [
-            'quantity.max' => 'Số lượng vé còn lại không đủ',
-            'quantity.min' => 'Số lượng vé phải lớn hơn 1',
+            'quantity.max' => 'Không đủ vé',
+            'quantity.min' => 'Số vé không đúng',
             'date_order.after_or_equal' => 'Ngày đặt phải từ hôm nay trở đi',
             'phone.regex' => 'Số điện thoại không đúng định dạng',
             'phone.size' => 'Số điện thoại phải có 10 số'
@@ -78,7 +82,7 @@ class TicketController extends Controller
 
         //* prepare data
         $data = [
-            'ticket' => Ticket::select('name', 'id')->where('id', $request->ticket)->first(),
+            'ticket' => Ticket::select('name', 'id', 'remain')->where('id', $request->ticket)->first(),
             'quantity' => $request->quantity,
             'date_order' => $request->date_order,
             'name' => $request->name,
@@ -108,7 +112,7 @@ class TicketController extends Controller
                 'quantity' => $request->quantity,
             ]],
             'mode' => 'payment',
-            'success_url' => route('checkout.success', [], true) . "?session_id={CHECKOUT_SESSION_ID}&id_ticket=" . $request->id_ticket . "&quantity=" . $request->quantity . "&date_order=" . $request->date_order . "",
+            'success_url' => route('checkout.success', [], true) . "?session_id={CHECKOUT_SESSION_ID}&id_ticket=" . $request->id_ticket . "&quantity=" . $request->quantity . "&date_order=" . $request->date_order . "&remain=" . $request->remain,
             'cancel_url' =>  route('checkout.cancel', [], true),
         ]);
 
@@ -202,9 +206,9 @@ class TicketController extends Controller
     }
     // End Method
 
-    public function webhook()
+    public function webhook(Request $request)
     {
-
+        //* code from stripe
         $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
 
         // This is your Stripe CLI webhook secret for testing your endpoint locally.
@@ -237,11 +241,49 @@ class TicketController extends Controller
                 $session_id = $session->id;
 
                 $order = Order::where('session_id', $session_id)->first();
+                // $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+                // $tickets = Ticket::where('id', $request->id_ticket)->first();
+
+                //* change order status
                 if ($order && $order->status === 'unpaid') {
                     $order->status = 'paid';
                     $order->save();
-                    //TODO  send mail
                 }
+                //* change order status
+
+                //* insert OrderDetail
+                // if (count($orderDetail) == 0) {
+                //     $orderDetail->id_order = $order->id;
+                //     $orderDetail->id_ticket = $request->id_ticket;
+                //     $orderDetail->quantity = $request->quantity;
+                //     $orderDetail->save();
+                // }
+                //* insert OrderDetail
+
+                //* decrease quantity of ticket (sold ticket)
+                // if ($tickets->remain == $request->remain) {
+                //     $tickets->remain -= $request->quantity;
+                //     $tickets->save();
+                // }
+                //* decrease quantity of ticket (sold ticket)
+
+                //* make a string to create QR code
+                // function getFirstCapitalLetter(string $str)
+                // {
+                //     $strFinal = '';
+
+                //     $str = strtolower($str);
+                //     $arr = explode(' ', $str);
+                //     foreach ($arr as $i) {
+                //         $strFinal .= strtoupper($i[0]);
+                //     }
+
+                //     return $strFinal;
+                // }
+
+                // $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
+                //* make a string to create QR code
+                //TODO  send mail
 
             default:
                 echo 'Received unknown event type ' . $event->type;
