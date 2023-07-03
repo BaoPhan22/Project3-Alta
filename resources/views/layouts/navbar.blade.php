@@ -1,6 +1,7 @@
 <nav class="row m-0">
     <div class="col-3 d-flex flex-row-reverse">
-        <img src="{{ asset('layout-img/Little & Little Logo (ngang) 1.svg') }}" alt="logo" width="50%">
+        <img src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688358524/Little_Little_Logo_ngang_1_tpifr4.svg"
+            alt="logo" width="50%">
     </div>
     <div class="col-6 d-flex justify-content-evenly align-items-center">
         <a href="#" class="active link-custom">Trang chủ</a>

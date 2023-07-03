@@ -2,7 +2,8 @@
 @section('title', 'Thanh toán')
 @section('content')
     <p class="page-title tilte-custom">Thanh toán</p>
-    <img src="{{ asset('layout-img/Trini_Arnold_Votay1 2.svg') }}" id="bfp-context">
+    <img src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688357579/Trini_Arnold_Votay1_2_nu5go9.svg"
+        id="bfp-context">
 
 
     <form action="{{ route('checkout') }}" method="post" class="row infomation-form-container infomation-form-container1">

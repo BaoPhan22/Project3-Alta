@@ -2,7 +2,8 @@
 @section('title', 'Thanh toán thành công')
 @section('content')
     <p class="page-title tilte-custom">Thanh toán thành công</p>
-    <img src="{{ asset('layout-img/Alvin_Arnold_Votay1 1.svg') }}" id="bfp-context">
+    <img src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688357585/Alvin_Arnold_Votay1_1_jxd9rr.svg"
+        id="bfp-context">
 
     <div class="row infomation-form-container infomation-form-container1">
         <div id="index-content">

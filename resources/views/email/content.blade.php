@@ -8,7 +8,7 @@ Hệ thống vừa ghi nhận bạn thanh toán số tiền <strong><em>{{ $pric
 <br><br>
 @for ($i = 1; $i <= (int) $quantity; $i++)
     <div class="card" style='width:18rem'>
-        <div class="card-body">
+        <div class="card-body text-center">
             {!! QrCode::generate($string_to_qr) !!}
             <p>{{ $string_to_qr }}</p>
             <p>{{ $ticket_name }}</p>
