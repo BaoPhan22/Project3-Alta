@@ -6,46 +6,41 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Events;
 use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\ThankYouMail;
-use PDF;
+
+function checkUserExistByPhone(string $phone, string $email, string $name)
+{
+    $checkUser = User::select('id')->where('phone', $phone)->get();
+    if (count($checkUser) == 0) {
+        $newUser = new User;
+        $newUser->email = $email;
+        $newUser->phone = $phone;
+        $newUser->name = $name;
+        $newUser->save();
+    }
+}
+function getFirstCapitalLetter(string $str)
+{
+    $strFinal = '';
+
+    $str = strtolower($str);
+    $arr = explode(' ', $str);
+    foreach ($arr as $i) {
+        $strFinal .= strtoupper($i[0]);
+    }
+
+    return $strFinal;
+}
+function markAsPaid(object $row)
+{
+    $row->status = 'paid';
+    $row->save();
+}
 
 class TicketController extends Controller
 {
-    public function save(Request $request)
-    {
-        $order = Order::where('session_id', $request->session_id)->first();
-        $user = User::find($order->id_users);
-        $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-        $ticket_name = Ticket::where('id', $orderDetail->id_ticket)->first()->name;
-        //* button mail clicked
-        if (isset($_POST['mail'])) {
-            Mail::to($user->email)->send(new ThankYouMail($user->name, $user->email, $order->total_price, $order->date_order, $orderDetail->quantity, $ticket_name, $request->string_to_qr));
-            return redirect()->route('index');
-        }
-        //* button mail clicked
-
-        //* button save clicked
-        if (isset($_POST['save'])) {
-            $data = [
-                'name' => $user->name, 'email' => $user->email, 'price' => number_format($order->total_price, 0, ',', '.'), 'date_order' => date('d/m/Y', strtotime($order->date_order)), 'quantity' => $orderDetail->quantity, 'ticket_name' => $ticket_name, 'string_to_qr' => $request->string_to_qr
-            ];
-            $pdf = PDF::loadView('download-file.invoice', $data);
-            return $pdf->download('invoice' . $request->string_to_qr . '.pdf');
-        }
-        //* button save clicked
-
-    }
-
-    public function index()
-    {
-        $tickets = Ticket::all();
-        return view('index', compact('tickets'));
-    }
 
 
 
@@ -62,7 +57,7 @@ class TicketController extends Controller
             "phone" => ['required', 'regex:/(0[3|5|7|8|9])+([0-9]{8})/', 'size:10']
         ], [
             'quantity.max' => 'Không đủ vé',
-            'quantity.min' => 'Số vé không đúng',
+            'quantity.min' => 'Số vé phải > 0',
             'date_order.after_or_equal' => 'Ngày đặt phải từ hôm nay trở đi',
             'phone.regex' => 'Số điện thoại không đúng định dạng',
             'phone.size' => 'Số điện thoại phải có 10 số'
@@ -70,14 +65,7 @@ class TicketController extends Controller
         //* validate input 
 
         //* if user (phone) is not existed -> create 
-        $checkUser = User::select('id')->where('phone', $request->phone)->get();
-        if (count($checkUser) == 0) {
-            $newUser = new User;
-            $newUser->email = $request->email;
-            $newUser->phone = $request->phone;
-            $newUser->name = $request->name;
-            $newUser->save();
-        }
+        checkUserExistByPhone($request->phone, $request->email, $request->name);
         //* if user (phone) is not existed -> create 
 
         //* get total price for order
@@ -116,7 +104,7 @@ class TicketController extends Controller
             ]],
             'mode' => 'payment',
             'success_url' => route('checkout.success', [], true) . "?session_id={CHECKOUT_SESSION_ID}&id_ticket=" . $request->id_ticket . "&quantity=" . $request->quantity . "&date_order=" . $request->date_order . "&remain=" . $request->remain,
-            'cancel_url' =>  route('checkout.cancel', [], true),
+            'cancel_url' =>  route('checkout.cancel', [], true) . "?session_id={CHECKOUT_SESSION_ID}",
         ]);
 
         //* create an unpaid order
@@ -130,82 +118,6 @@ class TicketController extends Controller
         //* create an unpaid order
 
         return redirect($checkout_session->url);
-    }
-    // End Method
-
-    public function success(Request $request)
-    {
-        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
-
-        try {
-            //* get id from url
-            $session_id = $request->get('session_id');
-            $session = $stripe->checkout->sessions->retrieve($session_id);
-            if (!$session) {
-                throw new NotFoundHttpException();
-            }
-
-            $order = Order::where('session_id', $session_id)->first();
-            if (!$order) {
-                throw new NotFoundHttpException();
-            }
-            if ($order->status === 'unpaid') {
-                //* change order status
-                $order->status = 'paid';
-                $order->save();
-                //* change order status
-
-                //* insert OrderDetail
-                $orderDetail = new OrderDetail();
-                $orderDetail->id_order = $order->id;
-                $orderDetail->id_ticket = $request->id_ticket;
-                $orderDetail->quantity = $request->quantity;
-                $orderDetail->save();
-                //* insert OrderDetail
-
-                //* decrease quantity of ticket (sold ticket)
-                $tickets = Ticket::where('id', $request->id_ticket)->first();
-                $tickets->remain -= $request->quantity;
-                $tickets->save();
-                //* decrease quantity of ticket (sold ticket)
-
-                //* make a string to create QR code
-                function getFirstCapitalLetter(string $str)
-                {
-                    $strFinal = '';
-
-                    $str = strtolower($str);
-                    $arr = explode(' ', $str);
-                    foreach ($arr as $i) {
-                        $strFinal .= strtoupper($i[0]);
-                    }
-
-                    return $strFinal;
-                }
-
-                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
-                //* make a string to create QR code
-
-                //* prepare data to view
-                $data = [
-                    // 'id_order' => $orderDetail->id_order,
-                    // 'id_ticket' => $orderDetail->id_ticket,
-                    'string_to_qr' => $qrCodeString,
-                    'quantity' => $orderDetail->quantity,
-                    'date_order' => date('d/m/Y', strtotime($request->date_order)),
-                    'ticket_name' => Ticket::find($orderDetail->id_ticket)->name,
-                ];
-                //* prepare data to view
-            }
-            return view('checkout-success')->with('data', $data);
-        } catch (Exception $e) {
-            throw new NotFoundHttpException();
-        }
-    }
-    // End Method
-
-    public function cancel()
-    {
     }
     // End Method
 
@@ -295,4 +207,73 @@ class TicketController extends Controller
         return response('');
     }
     // End Method
+
+    public function success(Request $request)
+    {
+        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
+
+        try {
+            //* get id from url
+            $session_id = $request->get('session_id');
+            $session = $stripe->checkout->sessions->retrieve($session_id);
+            if (!$session) {
+                throw new NotFoundHttpException();
+            }
+
+            $order = Order::where('session_id', $session_id)->first();
+            if (!$order) {
+                throw new NotFoundHttpException();
+            }
+            if ($order->status === 'unpaid') {
+                //* change order status
+                markAsPaid($order);
+                //* change order status
+
+                //* insert OrderDetail
+                $orderDetail = new OrderDetail();
+                $orderDetail->id_order = $order->id;
+                $orderDetail->id_ticket = $request->id_ticket;
+                $orderDetail->quantity = $request->quantity;
+                $orderDetail->save();
+                //* insert OrderDetail
+
+                //* decrease quantity of ticket (sold ticket)
+                $tickets = Ticket::where('id', $request->id_ticket)->first();
+                $tickets->remain -= $request->quantity;
+                $tickets->save();
+                //* decrease quantity of ticket (sold ticket)
+
+                //* make a string to create QR code
+                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
+                //* make a string to create QR code
+
+                //* prepare data to view
+                $data = [
+                    'string_to_qr' => $qrCodeString,
+                    'quantity' => $orderDetail->quantity,
+                    'date_order' => date('d/m/Y', strtotime($request->date_order)),
+                    'ticket_name' => Ticket::find($orderDetail->id_ticket)->name,
+                ];
+                //* prepare data to view
+            }
+            return view('checkout-success')->with('data', $data);
+        } catch (Exception $e) {
+            throw new NotFoundHttpException();
+        }
+    }
+    // End Method
+
+    public function cancel(Request $request)
+    {
+        $order = Order::where('session_id', $request->get('session_id'))->first();
+
+        if ($order->status === 'unpaid') {
+            $order->status = 'cancel';
+            $order->save();
+        }
+        return redirect()->route('index');
+    }
+    // End Method
+
+
 }

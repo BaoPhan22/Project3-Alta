@@ -6,17 +6,19 @@ Hệ thống vừa ghi nhận bạn thanh toán số tiền <strong><em>{{ $pric
 <strong>{{ $quantity }}
     {{ $ticket_name }}</strong> ngày <strong>{{ $date_order }}</strong>
 <br><br>
-@for ($i = 1; $i <= (int) $quantity; $i++)
-    <div class="card" style='width:18rem'>
-        <div class="card-body text-center">
-            {!! QrCode::generate($string_to_qr) !!}
-            <p>{{ $string_to_qr }}</p>
-            <p>{{ $ticket_name }}</p>
-            <p>---</p>
-            <p>Ngày sử dụng: {{ $date_order }}</p>
+<div class="d-flex justify-content-start flex-wrap">
+    @for ($i = 1; $i <= (int) $quantity; $i++)
+        <div class="card me-1">
+            <div class="card-body text-center">
+                {!! QrCode::generate($string_to_qr) !!}
+                <p>{{ $string_to_qr }}</p>
+                <p>{{ $ticket_name }}</p>
+                <p>---</p>
+                <p>Ngày sử dụng: {{ $date_order }}</p>
+            </div>
         </div>
-    </div>
-@endfor
+    @endfor
+</div>
 <br><br>
 
 Chúng tôi chân thành cám ơn bạn đã sử dụng dịch vụ

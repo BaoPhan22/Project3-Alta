@@ -73,7 +73,7 @@
                  <div class="col-4 flex-column d-flex justify-content-between">
                      <div class="row mb-4 infomation-item">
                          <div class="contact-info-item row m-auto">
-                             <div class="col-3">
+                             <div class="col-3 d-flex justify-content-center align-items-center">
                                  <img
                                      src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688373490/adress_1_f196la.svg">
                              </div>
@@ -85,7 +85,7 @@
                      </div>
                      <div class="row mb-4 infomation-item">
                          <div class="contact-info-item row m-auto">
-                             <div class="col-3">
+                             <div class="col-3 d-flex justify-content-center align-items-center">
                                  <img
                                      src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688373490/mail-inbox-app_1_d2mxi0.svg">
                              </div>
@@ -98,7 +98,7 @@
                      </div>
                      <div class="row mb-3 infomation-item">
                          <div class="contact-info-item row m-auto">
-                             <div class="col-3">
+                             <div class="col-3 d-flex justify-content-center align-items-center">
                                  <img
                                      src="https://res.cloudinary.com/dpobeimdp/image/upload/v1688373490/telephone_2_quuhc9.svg">
                              </div>
