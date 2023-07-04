@@ -33,17 +33,14 @@ function getFirstCapitalLetter(string $str)
 
     return $strFinal;
 }
-function markAsPaid(object $row)
+function changeStatus(object $row, string $status)
 {
-    $row->status = 'paid';
+    $row->status = $status;
     $row->save();
 }
 
 class TicketController extends Controller
 {
-
-
-
     public function beforepay(Request $request)
     {
         //* check remaining tickets
@@ -70,6 +67,7 @@ class TicketController extends Controller
 
         //* get total price for order
         $total = json_decode(Ticket::find($request->ticket)->first('price'))->price * $request->quantity;
+        //* get total price for order
 
         //* prepare data
         $data = [
@@ -91,6 +89,7 @@ class TicketController extends Controller
         //* code from stripe
         $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
 
+        //* create a checkout session
         $checkout_session = $stripe->checkout->sessions->create([
             'line_items' => [[
                 'price_data' => [
@@ -121,91 +120,91 @@ class TicketController extends Controller
     }
     // End Method
 
-    public function webhook(Request $request)
-    {
-        //* code from stripe
-        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
+    // public function webhook(Request $request)
+    // {
+    //     //* code from stripe
+    //     $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
 
-        // This is your Stripe CLI webhook secret for testing your endpoint locally.
-        $endpoint_secret = env('STRIPE_SECRET_WEBHOOK');
+    //     // This is your Stripe CLI webhook secret for testing your endpoint locally.
+    //     $endpoint_secret = env('STRIPE_SECRET_WEBHOOK');
 
-        $payload = @file_get_contents('php://input');
-        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-        $event = null;
+    //     $payload = @file_get_contents('php://input');
+    //     $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+    //     $event = null;
 
-        try {
-            $event = \Stripe\Webhook::constructEvent(
-                $payload,
-                $sig_header,
-                $endpoint_secret
-            );
-        } catch (\UnexpectedValueException $e) {
-            // Invalid payload
+    //     try {
+    //         $event = \Stripe\Webhook::constructEvent(
+    //             $payload,
+    //             $sig_header,
+    //             $endpoint_secret
+    //         );
+    //     } catch (\UnexpectedValueException $e) {
+    //         // Invalid payload
 
-            return response('', 400);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            // Invalid signature
+    //         return response('', 400);
+    //     } catch (\Stripe\Exception\SignatureVerificationException $e) {
+    //         // Invalid signature
 
-            return response('', 400);
-        }
+    //         return response('', 400);
+    //     }
 
-        // Handle the event
-        switch ($event->type) {
-            case 'checkout.session.completed':
-                $session = $event->data->object;
-                $session_id = $session->id;
+    //     // Handle the event
+    //     switch ($event->type) {
+    //         case 'checkout.session.completed':
+    //             $session = $event->data->object;
+    //             $session_id = $session->id;
 
-                $order = Order::where('session_id', $session_id)->first();
-                // $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-                // $tickets = Ticket::where('id', $request->id_ticket)->first();
+    //             $order = Order::where('session_id', $session_id)->first();
+    //             // $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+    //             // $tickets = Ticket::where('id', $request->id_ticket)->first();
 
-                //* change order status
-                if ($order && $order->status === 'unpaid') {
-                    $order->status = 'paid';
-                    $order->save();
-                }
-                //* change order status
+    //             //* change order status
+    //             if ($order && $order->status === 'unpaid') {
+    //                 $order->status = 'paid';
+    //                 $order->save();
+    //             }
+    //             //* change order status
 
-                //* insert OrderDetail
-                // if (count($orderDetail) == 0) {
-                //     $orderDetail->id_order = $order->id;
-                //     $orderDetail->id_ticket = $request->id_ticket;
-                //     $orderDetail->quantity = $request->quantity;
-                //     $orderDetail->save();
-                // }
-                //* insert OrderDetail
+    //             //* insert OrderDetail
+    //             // if (count($orderDetail) == 0) {
+    //             //     $orderDetail->id_order = $order->id;
+    //             //     $orderDetail->id_ticket = $request->id_ticket;
+    //             //     $orderDetail->quantity = $request->quantity;
+    //             //     $orderDetail->save();
+    //             // }
+    //             //* insert OrderDetail
 
-                //* decrease quantity of ticket (sold ticket)
-                // if ($tickets->remain == $request->remain) {
-                //     $tickets->remain -= $request->quantity;
-                //     $tickets->save();
-                // }
-                //* decrease quantity of ticket (sold ticket)
+    //             //* decrease quantity of ticket (sold ticket)
+    //             // if ($tickets->remain == $request->remain) {
+    //             //     $tickets->remain -= $request->quantity;
+    //             //     $tickets->save();
+    //             // }
+    //             //* decrease quantity of ticket (sold ticket)
 
-                //* make a string to create QR code
-                // function getFirstCapitalLetter(string $str)
-                // {
-                //     $strFinal = '';
+    //             //* make a string to create QR code
+    //             // function getFirstCapitalLetter(string $str)
+    //             // {
+    //             //     $strFinal = '';
 
-                //     $str = strtolower($str);
-                //     $arr = explode(' ', $str);
-                //     foreach ($arr as $i) {
-                //         $strFinal .= strtoupper($i[0]);
-                //     }
+    //             //     $str = strtolower($str);
+    //             //     $arr = explode(' ', $str);
+    //             //     foreach ($arr as $i) {
+    //             //         $strFinal .= strtoupper($i[0]);
+    //             //     }
 
-                //     return $strFinal;
-                // }
+    //             //     return $strFinal;
+    //             // }
 
-                // $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
-                //* make a string to create QR code
-                //TODO  send mail
+    //             // $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
+    //             //* make a string to create QR code
+    //             //TODO  send mail
 
-            default:
-                echo 'Received unknown event type ' . $event->type;
-        }
+    //         default:
+    //             echo 'Received unknown event type ' . $event->type;
+    //     }
 
-        return response('');
-    }
+    //     return response('');
+    // }
     // End Method
 
     public function success(Request $request)
@@ -226,7 +225,7 @@ class TicketController extends Controller
             }
             if ($order->status === 'unpaid') {
                 //* change order status
-                markAsPaid($order);
+                changeStatus($order, 'paid');
                 //* change order status
 
                 //* insert OrderDetail
@@ -266,11 +265,7 @@ class TicketController extends Controller
     public function cancel(Request $request)
     {
         $order = Order::where('session_id', $request->get('session_id'))->first();
-
-        if ($order->status === 'unpaid') {
-            $order->status = 'cancel';
-            $order->save();
-        }
+        changeStatus($order, 'cancel');
         return redirect()->route('index');
     }
     // End Method

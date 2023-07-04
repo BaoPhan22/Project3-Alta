@@ -7,7 +7,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use App\Mail\ThankYouMail;
+use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
+use Barryvdh\DomPDF\PDF;
 // use PDF;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -29,7 +33,7 @@ Route::controller(TicketController::class)->group(function () {
     Route::get('/cancel', 'cancel')->name('checkout.cancel');
     Route::post('/beforepay', 'beforepay')->name('beforepay');
     Route::post('/checkout', 'checkout')->name('checkout');
-    Route::post('/webhook', 'webhook')->name('webhook');
+    // Route::post('/webhook', 'webhook')->name('webhook');
 });
 
 Route::post('/save', function (Request $request) {
@@ -46,19 +50,27 @@ Route::post('/save', function (Request $request) {
     //* button mail clicked
 
     //* button save clicked
-    // if (isset($_POST['save'])) {
-    //     $data = [
-    //         'name' => $user->name, 'email' => $user->email, 'price' => number_format($order->total_price, 0, ',', '.'), 'date_order' => date('d/m/Y', strtotime($order->date_order)), 'quantity' => $orderDetail->quantity, 'ticket_name' => $ticket_name, 'string_to_qr' => $request->string_to_qr
-    //     ];
-    //     $pdf = PDF::loadView('download-file.invoice', $data);
-    //     return $pdf->download('invoice' . $request->string_to_qr . '.pdf');
-    // }
+    if (isset($_POST['save'])) {
+        $data = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'price' => number_format($order->total_price, 0, ',', '.'),
+            'date_order' => date('d/m/Y', strtotime($order->date_order)),
+            'quantity' => $orderDetail->quantity,
+            'ticket_name' => $ticket_name,
+            'string_to_qr' => $request->string_to_qr
+        ];
+        $pdf = FacadePdf::loadView('email.content', $data)
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream();
+    }
     //* button save clicked
 })->name('save');
 
 Route::controller(EventController::class)->group(function () {
     Route::get('/event', 'event')->name('event');
-    Route::get('/event/detail/{id}', 'EventDetail')->name('event.detail');
+    Route::get('/event/{id}', 'EventDetail')->name('event.detail');
 });
 
 Route::get('/contact', function () {
