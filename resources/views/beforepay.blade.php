@@ -84,12 +84,18 @@
                     <input type="password" class="form-control" name="" id="card_cvv_cvc">
                 </div>
                 <div class="d-flex align-items-center justify-content-center pb-2">
-                    <button class="btn btn-primary" type="submit">Thanh toán</button>
+                    <button class="btn btn-primary" type="submit">Thanh
+                        toán</button>
                 </div>
             </div>
         </div>
         </div>
     </form>
+    <script>
+        document.querySelector(".btn").addEventListener('click', (e) => {
+            e.target.classList.add('disabled');
+        })
+    </script>
 
     {{-- </div> --}}
 @endsection

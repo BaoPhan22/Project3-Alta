@@ -169,7 +169,6 @@ class TicketController extends Controller
                 $remain = $session->metadata['remain'];
                 $userEmail = $session->customer_details['email'];
                 $userName = $session->customer_details['name'];
-                dd($userEmail);
                 //* metadata variable
 
                 $order = Order::where('session_id', $session_id)->first();
@@ -199,9 +198,16 @@ class TicketController extends Controller
                 //* make a string to create QR code
 
                 //* send mail
-                // Mail::to($userEmail)->send(new ThankYouMail($userName, $userEmail, $order->total_price, $order->date_order, $orderDetail->quantity, $tickets->name, $qrCodeString));
+                Mail::to($userEmail)->send(new ThankYouMail(
+                    $userName,
+                    $userEmail,
+                    $order->total_price,
+                    $order->date_order,
+                    $orderDetail->quantity,
+                    $tickets->name,
+                    $qrCodeString
+                ));
                 //* send mail
-
             default:
                 echo 'Received unknown event type ' . $event->type;
         }
@@ -221,9 +227,6 @@ class TicketController extends Controller
             $id_ticket = $session->metadata['id_ticket'];
             $quantity = $session->metadata['quantity'];
             $date_order = $session->metadata['date_order'];
-            // $userEmail = $session->customer_details['email'];
-            // $userName = $session->customer_details['name'];
-            // dd($userName);
 
             if (!$session) {
                 throw new NotFoundHttpException();
