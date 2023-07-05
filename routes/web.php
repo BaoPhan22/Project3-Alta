@@ -4,8 +4,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use App\Mail\ThankYouMail;
 use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
 use Barryvdh\DomPDF\PDF;
@@ -33,7 +33,7 @@ Route::controller(TicketController::class)->group(function () {
     Route::get('/cancel', 'cancel')->name('checkout.cancel');
     Route::post('/beforepay', 'beforepay')->name('beforepay');
     Route::post('/checkout', 'checkout')->name('checkout');
-    // Route::post('/webhook', 'webhook')->name('webhook');
+    Route::post('/webhook', 'webhook')->name('webhook');
 });
 
 Route::post('/save', function (Request $request) {

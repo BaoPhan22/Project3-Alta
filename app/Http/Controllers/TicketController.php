@@ -7,6 +7,8 @@ use App\Models\OrderDetail;
 use App\Models\Ticket;
 use App\Models\User;
 use Exception;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ThankYouMail;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -102,8 +104,14 @@ class TicketController extends Controller
                 'quantity' => $request->quantity,
             ]],
             'mode' => 'payment',
-            'success_url' => route('checkout.success', [], true) . "?session_id={CHECKOUT_SESSION_ID}&id_ticket=" . $request->id_ticket . "&quantity=" . $request->quantity . "&date_order=" . $request->date_order . "&remain=" . $request->remain,
+            'success_url' => route('checkout.success', [], true) . "?session_id={CHECKOUT_SESSION_ID}",
             'cancel_url' =>  route('checkout.cancel', [], true) . "?session_id={CHECKOUT_SESSION_ID}",
+            'metadata' => [
+                'id_ticket' => $request->id_ticket,
+                'date_order' => $request->date_order,
+                'remain' => $request->remain,
+                'quantity' => $request->quantity,
+            ],
         ]);
 
         //* create an unpaid order
@@ -120,91 +128,86 @@ class TicketController extends Controller
     }
     // End Method
 
-    // public function webhook(Request $request)
-    // {
-    //     //* code from stripe
-    //     $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
+    public function webhook()
+    {
+        //* code from stripe
+        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
 
-    //     // This is your Stripe CLI webhook secret for testing your endpoint locally.
-    //     $endpoint_secret = env('STRIPE_SECRET_WEBHOOK');
+        // This is your Stripe CLI webhook secret for testing your endpoint locally.
+        $endpoint_secret = env('STRIPE_SECRET_WEBHOOK');
 
-    //     $payload = @file_get_contents('php://input');
-    //     $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-    //     $event = null;
+        $payload = @file_get_contents('php://input');
+        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+        $event = null;
 
-    //     try {
-    //         $event = \Stripe\Webhook::constructEvent(
-    //             $payload,
-    //             $sig_header,
-    //             $endpoint_secret
-    //         );
-    //     } catch (\UnexpectedValueException $e) {
-    //         // Invalid payload
+        try {
+            $event = \Stripe\Webhook::constructEvent(
+                $payload,
+                $sig_header,
+                $endpoint_secret
+            );
+        } catch (\UnexpectedValueException $e) {
+            // Invalid payload
 
-    //         return response('', 400);
-    //     } catch (\Stripe\Exception\SignatureVerificationException $e) {
-    //         // Invalid signature
+            return response('', 400);
+        } catch (\Stripe\Exception\SignatureVerificationException $e) {
+            // Invalid signature
 
-    //         return response('', 400);
-    //     }
+            return response('', 400);
+        }
 
-    //     // Handle the event
-    //     switch ($event->type) {
-    //         case 'checkout.session.completed':
-    //             $session = $event->data->object;
-    //             $session_id = $session->id;
+        // Handle the event
+        switch ($event->type) {
+            case 'checkout.session.completed':
+                $session = $event->data->object;
+                $session_id = $session->id;
 
-    //             $order = Order::where('session_id', $session_id)->first();
-    //             // $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-    //             // $tickets = Ticket::where('id', $request->id_ticket)->first();
+                //* metadata variable
+                $id_ticket = $session->metadata['id_ticket'];
+                $quantity = $session->metadata['quantity'];
+                $date_order = $session->metadata['date_order'];
+                $remain = $session->metadata['remain'];
+                $userEmail = $session->customer_details['email'];
+                $userName = $session->customer_details['name'];
+                dd($userEmail);
+                //* metadata variable
 
-    //             //* change order status
-    //             if ($order && $order->status === 'unpaid') {
-    //                 $order->status = 'paid';
-    //                 $order->save();
-    //             }
-    //             //* change order status
+                $order = Order::where('session_id', $session_id)->first();
+                $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+                $tickets = Ticket::where('id', $id_ticket->first());
 
-    //             //* insert OrderDetail
-    //             // if (count($orderDetail) == 0) {
-    //             //     $orderDetail->id_order = $order->id;
-    //             //     $orderDetail->id_ticket = $request->id_ticket;
-    //             //     $orderDetail->quantity = $request->quantity;
-    //             //     $orderDetail->save();
-    //             // }
-    //             //* insert OrderDetail
+                //* change order status
+                if ($order && $order->status === 'unpaid') {
+                    changeStatus($order, 'paid');
+                }
+                //* change order status
 
-    //             //* decrease quantity of ticket (sold ticket)
-    //             // if ($tickets->remain == $request->remain) {
-    //             //     $tickets->remain -= $request->quantity;
-    //             //     $tickets->save();
-    //             // }
-    //             //* decrease quantity of ticket (sold ticket)
+                //* insert OrderDetail
+                $orderDetail->id_order = $order->id;
+                $orderDetail->id_ticket = $id_ticket;
+                $orderDetail->quantity = $quantity;
+                $orderDetail->save();
+                //* insert OrderDetail
 
-    //             //* make a string to create QR code
-    //             // function getFirstCapitalLetter(string $str)
-    //             // {
-    //             //     $strFinal = '';
+                //* decrease quantity of ticket (sold ticket)
+                $tickets->remain -= $quantity;
+                $tickets->save();
+                //* decrease quantity of ticket (sold ticket)
 
-    //             //     $str = strtolower($str);
-    //             //     $arr = explode(' ', $str);
-    //             //     foreach ($arr as $i) {
-    //             //         $strFinal .= strtoupper($i[0]);
-    //             //     }
+                //* make a string to create QR code
+                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($date_order));
+                //* make a string to create QR code
 
-    //             //     return $strFinal;
-    //             // }
+                //* send mail
+                // Mail::to($userEmail)->send(new ThankYouMail($userName, $userEmail, $order->total_price, $order->date_order, $orderDetail->quantity, $tickets->name, $qrCodeString));
+                //* send mail
 
-    //             // $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
-    //             //* make a string to create QR code
-    //             //TODO  send mail
+            default:
+                echo 'Received unknown event type ' . $event->type;
+        }
 
-    //         default:
-    //             echo 'Received unknown event type ' . $event->type;
-    //     }
-
-    //     return response('');
-    // }
+        return response('');
+    }
     // End Method
 
     public function success(Request $request)
@@ -215,6 +218,13 @@ class TicketController extends Controller
             //* get id from url
             $session_id = $request->get('session_id');
             $session = $stripe->checkout->sessions->retrieve($session_id);
+            $id_ticket = $session->metadata['id_ticket'];
+            $quantity = $session->metadata['quantity'];
+            $date_order = $session->metadata['date_order'];
+            // $userEmail = $session->customer_details['email'];
+            // $userName = $session->customer_details['name'];
+            // dd($userName);
+
             if (!$session) {
                 throw new NotFoundHttpException();
             }
@@ -231,19 +241,19 @@ class TicketController extends Controller
                 //* insert OrderDetail
                 $orderDetail = new OrderDetail();
                 $orderDetail->id_order = $order->id;
-                $orderDetail->id_ticket = $request->id_ticket;
-                $orderDetail->quantity = $request->quantity;
+                $orderDetail->id_ticket = $id_ticket;
+                $orderDetail->quantity = $quantity;
                 $orderDetail->save();
                 //* insert OrderDetail
 
                 //* decrease quantity of ticket (sold ticket)
-                $tickets = Ticket::where('id', $request->id_ticket)->first();
-                $tickets->remain -= $request->quantity;
+                $tickets = Ticket::where('id', $id_ticket)->first();
+                $tickets->remain -= $quantity;
                 $tickets->save();
                 //* decrease quantity of ticket (sold ticket)
 
                 //* make a string to create QR code
-                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($request->date_order));
+                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($date_order));
                 //* make a string to create QR code
 
                 //* prepare data to view
