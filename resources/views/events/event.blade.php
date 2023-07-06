@@ -14,7 +14,7 @@
         class="d-flex justify-content-center align-items-center content-container">
         <div class="row w-75 mt-5">
             @foreach ($events as $item)
-                <div class="card col p-0 mx-2"
+                <div class="card col-3 p-0 mx-2"
                     style="box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px; border: none">
                     <img src="{{ $item->imgUrl }}" class="card-img-top" width="100%">
                     <div class="card-body">
