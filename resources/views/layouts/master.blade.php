@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="{{ asset('css/index.css') }}">
     <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
     <title>@yield('title', config('app.name', '@Master Layout'))</title>
+    @cloudinaryJS
 </head>
 
 <body class="bg">

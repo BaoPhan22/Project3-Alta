@@ -93,6 +93,7 @@ class TicketController extends Controller
 
         //* create a checkout session
         $checkout_session = $stripe->checkout->sessions->create([
+            'invoice_creation' => ['enabled' => true],
             'line_items' => [[
                 'price_data' => [
                     'currency' => 'vnd',
@@ -136,7 +137,7 @@ class TicketController extends Controller
         // This is your Stripe CLI webhook secret for testing your endpoint locally.
         $endpoint_secret = env('STRIPE_SECRET_WEBHOOK');
 
-        $payload = @file_get_contents('php://input');
+        $payload = file_get_contents('php://input');
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
         $event = null;
 
@@ -162,52 +163,63 @@ class TicketController extends Controller
                 $session = $event->data->object;
                 $session_id = $session->id;
 
-                //* metadata variable
-                $id_ticket = $session->metadata['id_ticket'];
-                $quantity = $session->metadata['quantity'];
-                $date_order = $session->metadata['date_order'];
-                $remain = $session->metadata['remain'];
-                $userEmail = $session->customer_details['email'];
-                $userName = $session->customer_details['name'];
-                //* metadata variable
-
                 $order = Order::where('session_id', $session_id)->first();
-                $orderDetail = OrderDetail::where('id_order', $order->id)->first();
-                $tickets = Ticket::where('id', $id_ticket->first());
 
-                //* change order status
-                if ($order && $order->status === 'unpaid') {
-                    changeStatus($order, 'paid');
+                if ($order) {
+                    //* change order status
+                    if ($order->status === 'unpaid')
+                        changeStatus($order, 'paid');
+                    //* change order status
+
+                    //* metadata variable
+                    $id_ticket = $session->metadata['id_ticket'];
+                    $quantity = $session->metadata['quantity'];
+                    $date_order = $session->metadata['date_order'];
+                    $remain = $session->metadata['remain'];
+                    $userEmail = $session->customer_details['email'];
+                    $userName = $session->customer_details['name'];
+                    //* metadata variable
+
+                    //* insert OrderDetail
+                    $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+                    if (empty($orderDetail)) {
+                        $od = new OrderDetail();
+                        $od->id_order = $order->id;
+                        $od->id_ticket = $id_ticket;
+                        $od->quantity = $quantity;
+                        $od->save();
+                        $orderDetailId = $od->id;
+                    }
+                    //* insert OrderDetail
+
+                    //* decrease quantity of ticket (sold ticket)
+                    $ticket = Ticket::where('id', $id_ticket)->first();
+                    if ($ticket) {
+                        if ($ticket->remain == $remain) {
+                            $ticket_name = $ticket->name;
+                            $ticket->remain -= $quantity;
+                            $ticket->save();
+                        }
+                    }
+                    //* decrease quantity of ticket (sold ticket)
+
+                    //* make a string to create QR code
+                    $qrCodeString = getFirstCapitalLetter($ticket_name) . $order->id  . $orderDetailId . date('Ymd', strtotime($date_order));
+                    //* make a string to create QR code
+
+                    //* send mail
+                    Mail::to($userEmail)->send(new ThankYouMail(
+                        $userName,
+                        $userEmail,
+                        $order->total_price,
+                        $order->date_order,
+                        $quantity,
+                        $ticket_name,
+                        $qrCodeString
+                    ));
+                    //* send mail
                 }
-                //* change order status
 
-                //* insert OrderDetail
-                $orderDetail->id_order = $order->id;
-                $orderDetail->id_ticket = $id_ticket;
-                $orderDetail->quantity = $quantity;
-                $orderDetail->save();
-                //* insert OrderDetail
-
-                //* decrease quantity of ticket (sold ticket)
-                $tickets->remain -= $quantity;
-                $tickets->save();
-                //* decrease quantity of ticket (sold ticket)
-
-                //* make a string to create QR code
-                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($date_order));
-                //* make a string to create QR code
-
-                //* send mail
-                Mail::to($userEmail)->send(new ThankYouMail(
-                    $userName,
-                    $userEmail,
-                    $order->total_price,
-                    $order->date_order,
-                    $orderDetail->quantity,
-                    $tickets->name,
-                    $qrCodeString
-                ));
-                //* send mail
             default:
                 echo 'Received unknown event type ' . $event->type;
         }
@@ -224,7 +236,9 @@ class TicketController extends Controller
             //* get id from url
             $session_id = $request->get('session_id');
             $session = $stripe->checkout->sessions->retrieve($session_id);
+
             $id_ticket = $session->metadata['id_ticket'];
+            $remain = $session->metadata['remain'];
             $quantity = $session->metadata['quantity'];
             $date_order = $session->metadata['date_order'];
 
@@ -236,38 +250,49 @@ class TicketController extends Controller
             if (!$order) {
                 throw new NotFoundHttpException();
             }
-            if ($order->status === 'unpaid') {
-                //* change order status
+            $orderId = $order->id;
+
+            if ($order->status === 'unpaid')
                 changeStatus($order, 'paid');
-                //* change order status
 
-                //* insert OrderDetail
-                $orderDetail = new OrderDetail();
-                $orderDetail->id_order = $order->id;
-                $orderDetail->id_ticket = $id_ticket;
-                $orderDetail->quantity = $quantity;
-                $orderDetail->save();
-                //* insert OrderDetail
-
-                //* decrease quantity of ticket (sold ticket)
-                $tickets = Ticket::where('id', $id_ticket)->first();
-                $tickets->remain -= $quantity;
-                $tickets->save();
-                //* decrease quantity of ticket (sold ticket)
-
-                //* make a string to create QR code
-                $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($date_order));
-                //* make a string to create QR code
-
-                //* prepare data to view
-                $data = [
-                    'string_to_qr' => $qrCodeString,
-                    'quantity' => $orderDetail->quantity,
-                    'date_order' => date('d/m/Y', strtotime($request->date_order)),
-                    'ticket_name' => Ticket::find($orderDetail->id_ticket)->name,
-                ];
-                //* prepare data to view
+            //* insert OrderDetail
+            $orderDetail = OrderDetail::where('id_order', $order->id)->first();
+            if (empty($orderDetail)) {
+                $od = new OrderDetail();
+                $od->id_order = $orderId;
+                $od->id_ticket = $id_ticket;
+                $od->quantity = $quantity;
+                $od->save();
+                $orderDetailId = $od->id;
+            } else {
+                $orderDetailId = $orderDetail->id;
             }
+            //* insert OrderDetail
+
+            //* decrease quantity of ticket (sold ticket)
+            $ticket = Ticket::where('id', $id_ticket)->first();
+            if ($ticket) {
+                $ticket_name = $ticket->name;
+                if ($ticket->remain == $remain) {
+                    $ticket->remain -= $quantity;
+                    $ticket->save();
+                }
+            }
+            //* decrease quantity of ticket (sold ticket)
+
+            //* make a string to create QR code
+            // $qrCodeString = getFirstCapitalLetter($tickets->name) . $orderDetail->id_order  . $orderDetail->id . date('Ymd', strtotime($date_order));
+            $qrCodeString = getFirstCapitalLetter($ticket_name) . $orderId  . $orderDetailId . date('Ymd', strtotime($date_order));
+            //* make a string to create QR code
+
+            //* prepare data to view
+            $data = [
+                'string_to_qr' => $qrCodeString,
+                'quantity' => $quantity,
+                'date_order' => date('d/m/Y', strtotime($date_order)),
+                'ticket_name' => $ticket_name,
+            ];
+            //* prepare data to view
             return view('checkout-success')->with('data', $data);
         } catch (Exception $e) {
             throw new NotFoundHttpException();
