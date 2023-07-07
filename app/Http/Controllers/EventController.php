@@ -52,6 +52,7 @@ class EventController extends Controller
             'start' => $request->start,
             'end' => $request->end,
             'price' => $request->price,
+            'detail' => $request->detail,
             'imgUrl' => $uploadedFileUrl,
         ]);
     }

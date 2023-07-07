@@ -18,12 +18,12 @@
     <form action="{{ route('checkout') }}" method="post" class="row infomation-form-container infomation-form-container1">
         @csrf
         <input type="hidden" name="id_user" value="{{ $data['id_user'] }}">
-        <input type="hidden" name="id_ticket" value="{{ $data['ticket']->id }}">
-        <input type="hidden" name="remain" value="{{ $data['ticket']->remain }}">
+        <input type="hidden" name="id_ticket" value="{{ $data['ticket']['id'] }}">
+        <input type="hidden" name="remain" value="{{ $data['ticket']['remain'] }}">
         <div class="col-8 infomation-item">
             <div id="index-content" class="bfp-p">
                 <div class="form-caption-container form-caption-container1">
-                    <div class="form-caption text-center p-2 text-white">{{ $data['ticket']->name }}</div>
+                    <div class="form-caption text-center p-2 text-white">{{ $data['ticket']['name'] }}</div>
                 </div>
                 <div class="row">
                     <div class="mb-3 col-5">
